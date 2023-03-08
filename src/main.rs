@@ -139,93 +139,93 @@ fn type_data_to_code_main() {
 fn type_data_to_code(type_data: &TypeData) -> String {
     let comments = swc_common::comments::SingleThreadedComments::default();
 
-    let mut comment_byte_pos = swc_common::BytePos(0);
-
+    swc_common::GLOBALS.set(&swc_common::Globals::default(), || {
     let module = swc_ecma_ast::TsModuleBlock {
-        span: swc_common::Span::default(),
-        body: vec![swc_ecma_ast::ModuleItem::ModuleDecl(
-            swc_ecma_ast::ModuleDecl::ExportDecl(swc_ecma_ast::ExportDecl {
-                span: {
-                    comment_byte_pos = comment_byte_pos + swc_common::BytePos(1);
-                    swc_common::comments::Comments::add_leading(
-                        &comments,
-                        comment_byte_pos,
-                        swc_common::comments::Comment {
-                            span: swc_common::DUMMY_SP,
-                            kind: swc_common::comments::CommentKind::Block,
-                            text: swc_atoms::Atom::from(type_data.comment.clone()),
-                        },
-                    );
-                    swc_common::Spanned::span(&comment_byte_pos)
-                },
-                decl: swc_ecma_ast::Decl::TsTypeAlias(Box::new(swc_ecma_ast::TsTypeAliasDecl {
-                    id: swc_ecma_ast::Ident::new(
-                        string_cache::Atom::from(type_data.name.clone()),
-                        swc_common::Span::default(),
-                    ),
-                    declare: false,
-                    span: swc_common::Span::default(),
-                    type_ann: Box::new(swc_ecma_ast::TsType::TsTypeLit(swc_ecma_ast::TsTypeLit {
+            span: swc_common::Span::default(),
+            body: vec![swc_ecma_ast::ModuleItem::ModuleDecl(
+                swc_ecma_ast::ModuleDecl::ExportDecl(swc_ecma_ast::ExportDecl {
+                    span: {
+                        let span = swc_common::Span::dummy_with_cmt();
+                        swc_common::comments::Comments::add_leading(
+                            &comments,
+                            span.lo,
+                            swc_common::comments::Comment {
+                                span: swc_common::DUMMY_SP,
+                                kind: swc_common::comments::CommentKind::Block,
+                                text: swc_atoms::Atom::from(type_data.comment.clone()),
+                            },
+                        );
+                        span
+                    },
+                    decl: swc_ecma_ast::Decl::TsTypeAlias(Box::new(swc_ecma_ast::TsTypeAliasDecl {
+                        id: swc_ecma_ast::Ident::new(
+                            string_cache::Atom::from(type_data.name.clone()),
+                            swc_common::Span::default(),
+                        ),
+                        declare: false,
                         span: swc_common::Span::default(),
-                        members: type_data.members.iter().map(|member| {
-                            swc_ecma_ast::TsTypeElement::TsPropertySignature(
-                                swc_ecma_ast::TsPropertySignature {
-                                    span: {
-                                        comment_byte_pos = comment_byte_pos + swc_common::BytePos(1);
-                                        swc_common::comments::Comments::add_leading(
-                                            &comments,
-                                            comment_byte_pos,
-                                            swc_common::comments::Comment {
-                                                span: swc_common::DUMMY_SP,
-                                                kind: swc_common::comments::CommentKind::Block,
-                                                text: swc_atoms::Atom::from(member.comment.clone()),
-                                            },
-                                        );
-                                        swc_common::Spanned::span(&comment_byte_pos)
-                                    },
-                                    readonly: true,
-                                    key: Box::new(swc_ecma_ast::Expr::Ident(swc_ecma_ast::Ident {
-                                        span: swc_common::Span::default(),
-                                        sym: string_cache::Atom::from(member.name.clone()),
+                        type_ann: Box::new(swc_ecma_ast::TsType::TsTypeLit(swc_ecma_ast::TsTypeLit {
+                            span: swc_common::Span::default(),
+                            members: type_data.members.iter().map(|member| {
+                                swc_ecma_ast::TsTypeElement::TsPropertySignature(
+                                    swc_ecma_ast::TsPropertySignature {
+                                        span: {
+                                            let span = swc_common::Span::dummy_with_cmt();
+                                            swc_common::comments::Comments::add_leading(
+                                                &comments,
+                                                span.lo,
+                                                swc_common::comments::Comment {
+                                                    span: swc_common::DUMMY_SP,
+                                                    kind: swc_common::comments::CommentKind::Block,
+                                                    text: swc_atoms::Atom::from(member.comment.clone()),
+                                                },
+                                            );
+                                            span
+                                        },
+                                        readonly: true,
+                                        key: Box::new(swc_ecma_ast::Expr::Ident(swc_ecma_ast::Ident {
+                                            span: swc_common::Span::default(),
+                                            sym: string_cache::Atom::from(member.name.clone()),
+                                            optional: false,
+                                        })),
+                                        computed: false,
                                         optional: false,
-                                    })),
-                                    computed: false,
-                                    optional: false,
-                                    init: None,
-                                    params: vec![],
-                                    type_ann: Some(Box::new(swc_ecma_ast::TsTypeAnn {
-                                        span: swc_common::Span::default(),
-                                        type_ann: Box::new(swc_ecma_ast::TsType::TsKeywordType(
-                                            swc_ecma_ast::TsKeywordType {
-                                                span: swc_common::Span::default(),
-                                                kind:
-                                                    swc_ecma_ast::TsKeywordTypeKind::TsStringKeyword,
-                                            },
-                                        )),
-                                    })),
-                                    type_params: None,
-                                },
-                            )
-                        }).collect()
+                                        init: None,
+                                        params: vec![],
+                                        type_ann: Some(Box::new(swc_ecma_ast::TsTypeAnn {
+                                            span: swc_common::Span::default(),
+                                            type_ann: Box::new(swc_ecma_ast::TsType::TsKeywordType(
+                                                swc_ecma_ast::TsKeywordType {
+                                                    span: swc_common::Span::default(),
+                                                    kind:
+                                                        swc_ecma_ast::TsKeywordTypeKind::TsStringKeyword,
+                                                },
+                                            )),
+                                        })),
+                                        type_params: None,
+                                    },
+                                )
+                            }).collect()
+                        })),
+                        type_params: None,
                     })),
-                    type_params: None,
-                })),
-            }),
-        )],
-    };
+                }),
+            )],
+        };
 
-    let cm = swc_common::sync::Lrc::<swc_common::SourceMap>::default();
-    let mut buf = vec![];
-    let writer = swc_ecma_codegen::text_writer::JsWriter::new(cm.clone(), "\n", &mut buf, None);
+        let cm = swc_common::sync::Lrc::<swc_common::SourceMap>::default();
+        let mut buf = vec![];
+        let writer = swc_ecma_codegen::text_writer::JsWriter::new(cm.clone(), "\n", &mut buf, None);
 
-    let mut emitter = swc_ecma_codegen::Emitter {
-        cfg: Default::default(),
-        comments: Some(&comments),
-        cm: cm.clone(),
-        wr: writer,
-    };
+        let mut emitter = swc_ecma_codegen::Emitter {
+            cfg: Default::default(),
+            comments: Some(&comments),
+            cm: cm.clone(),
+            wr: writer,
+        };
 
-    swc_ecma_codegen::Node::emit_with(&module, &mut emitter).expect("コードの生成が失敗した");
+        swc_ecma_codegen::Node::emit_with(&module, &mut emitter).expect("コードの生成が失敗した");
 
-    String::from_utf8(buf).expect("UTF8として解釈できないコードを生成した")
+        String::from_utf8(buf).expect("UTF8として解釈できないコードを生成した")
+    })
 }
