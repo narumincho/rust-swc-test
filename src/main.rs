@@ -33,8 +33,8 @@ fn code_to_type_data_vec(code: &String) -> Vec<TypeData> {
         swc_ecma_ast::EsVersion::Es2022,
         swc_ecma_parser::StringInput::new(
             code,
-            swc_common::source_map::BytePos(0),
-            swc_common::source_map::BytePos((code.as_bytes().len() - 1) as u32),
+            swc_common::BytePos(0),
+            swc_common::BytePos((code.as_bytes().len() - 1) as u32),
         ),
         Some(&comments),
     );
@@ -139,15 +139,14 @@ fn type_data_to_code_main() {
 fn type_data_to_code(type_data: &TypeData) -> String {
     let comments = swc_common::comments::SingleThreadedComments::default();
 
-    let mut comment_byte_pos = swc_common::source_map::BytePos(0);
+    let mut comment_byte_pos = swc_common::BytePos(0);
 
     let module = swc_ecma_ast::TsModuleBlock {
         span: swc_common::Span::default(),
         body: vec![swc_ecma_ast::ModuleItem::ModuleDecl(
             swc_ecma_ast::ModuleDecl::ExportDecl(swc_ecma_ast::ExportDecl {
                 span: {
-                    comment_byte_pos = comment_byte_pos + swc_common::source_map::BytePos(1);
-
+                    comment_byte_pos = comment_byte_pos + swc_common::BytePos(1);
                     swc_common::comments::Comments::add_leading(
                         &comments,
                         comment_byte_pos,
@@ -172,7 +171,7 @@ fn type_data_to_code(type_data: &TypeData) -> String {
                             swc_ecma_ast::TsTypeElement::TsPropertySignature(
                                 swc_ecma_ast::TsPropertySignature {
                                     span: {
-                                        comment_byte_pos = comment_byte_pos + swc_common::source_map::BytePos(1);
+                                        comment_byte_pos = comment_byte_pos + swc_common::BytePos(1);
                                         swc_common::comments::Comments::add_leading(
                                             &comments,
                                             comment_byte_pos,
