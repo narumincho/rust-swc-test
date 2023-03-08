@@ -3,16 +3,24 @@ fn main() {
 }
 
 #[test]
-fn code_to_tree() {
-    let code = "
-/** アカウント */
-export type Account = {
-    /** アカウントを識別するID */
-    readonly id: string;
-    /** アカウント名 */
-    readonly name: string;
+fn code_to_type_data_main() {
+    let result = code_to_type_data_vec(
+        &"
+    /** アカウント */
+    export type Account = {
+        /** アカウントを識別するID */
+        readonly id: string;
+        /** アカウント名 */
+        readonly name: string;
+    }
+    "
+        .to_string(),
+    );
+
+    println!("{:#?}", result);
 }
-";
+
+fn code_to_type_data_vec(code: &String) -> Vec<TypeData> {
     let comments = swc_common::comments::SingleThreadedComments::default();
     let lexer = swc_ecma_parser::lexer::Lexer::new(
         swc_ecma_parser::Syntax::Typescript(swc_ecma_parser::TsConfig {
@@ -33,9 +41,8 @@ export type Account = {
     let mut parser = swc_ecma_parser::Parser::new_from(lexer);
     let tree_result = parser.parse_typescript_module();
     let module = tree_result.expect("パースに失敗");
-    println!("{:#?}", module);
 
-    let result: Vec<TypeData> = module
+    module
         .body
         .iter()
         .filter_map(|module_item| match module_item {
@@ -94,9 +101,7 @@ export type Account = {
             },
             swc_ecma_ast::ModuleItem::Stmt(_) => None,
         })
-        .collect();
-
-    println!("{:#?}", result);
+        .collect()
 }
 
 #[derive(Debug)]
@@ -113,67 +118,76 @@ struct MemberData {
 }
 
 #[test]
-fn tree_to_code() {
+fn type_data_to_code_main() {
+    let result = type_data_to_code(&TypeData {
+        name: "Account".to_string(),
+        comment: "アカウント".to_string(),
+        members: vec![
+            MemberData {
+                name: "id".to_string(),
+                comment: "* アカウントを識別するID ".to_string(),
+            },
+            MemberData {
+                name: "name".to_string(),
+                comment: "* アカウント名 ".to_string(),
+            },
+        ],
+    });
+    println!("{}", result);
+}
+
+fn type_data_to_code(type_data: &TypeData) -> String {
     let comments = swc_common::comments::SingleThreadedComments::default();
 
-    let account_comment_byte_pos = swc_common::source_map::BytePos(1);
-
-    swc_common::comments::Comments::add_leading(
-        &comments,
-        account_comment_byte_pos,
-        swc_common::comments::Comment {
-            span: swc_common::DUMMY_SP,
-            kind: swc_common::comments::CommentKind::Block,
-            text: swc_atoms::Atom::from("アカウント"),
-        },
-    );
-
-    let account_id_comment_byte_pos = swc_common::source_map::BytePos(2);
-
-    swc_common::comments::Comments::add_leading(
-        &comments,
-        account_id_comment_byte_pos,
-        swc_common::comments::Comment {
-            span: swc_common::DUMMY_SP,
-            kind: swc_common::comments::CommentKind::Block,
-            text: swc_atoms::Atom::from("アカウントを識別するID"),
-        },
-    );
-
-    let account_name_comment_byte_pos = swc_common::source_map::BytePos(3);
-
-    swc_common::comments::Comments::add_leading(
-        &comments,
-        account_name_comment_byte_pos,
-        swc_common::comments::Comment {
-            span: swc_common::DUMMY_SP,
-            kind: swc_common::comments::CommentKind::Block,
-            text: swc_atoms::Atom::from("アカウント名"),
-        },
-    );
+    let mut comment_byte_pos = swc_common::source_map::BytePos(0);
 
     let module = swc_ecma_ast::TsModuleBlock {
         span: swc_common::Span::default(),
         body: vec![swc_ecma_ast::ModuleItem::ModuleDecl(
             swc_ecma_ast::ModuleDecl::ExportDecl(swc_ecma_ast::ExportDecl {
-                span: swc_common::Spanned::span(&account_comment_byte_pos),
+                span: {
+                    comment_byte_pos = comment_byte_pos + swc_common::source_map::BytePos(1);
+
+                    swc_common::comments::Comments::add_leading(
+                        &comments,
+                        comment_byte_pos,
+                        swc_common::comments::Comment {
+                            span: swc_common::DUMMY_SP,
+                            kind: swc_common::comments::CommentKind::Block,
+                            text: swc_atoms::Atom::from(type_data.comment.clone()),
+                        },
+                    );
+                    swc_common::Spanned::span(&comment_byte_pos)
+                },
                 decl: swc_ecma_ast::Decl::TsTypeAlias(Box::new(swc_ecma_ast::TsTypeAliasDecl {
                     id: swc_ecma_ast::Ident::new(
-                        string_cache::Atom::from("Account"),
+                        string_cache::Atom::from(type_data.name.clone()),
                         swc_common::Span::default(),
                     ),
                     declare: false,
                     span: swc_common::Span::default(),
                     type_ann: Box::new(swc_ecma_ast::TsType::TsTypeLit(swc_ecma_ast::TsTypeLit {
                         span: swc_common::Span::default(),
-                        members: vec![
+                        members: type_data.members.iter().map(|member| {
                             swc_ecma_ast::TsTypeElement::TsPropertySignature(
                                 swc_ecma_ast::TsPropertySignature {
-                                    span: swc_common::Spanned::span(&account_id_comment_byte_pos),
+                                    span: {
+                                        comment_byte_pos = comment_byte_pos + swc_common::source_map::BytePos(1);
+                                        swc_common::comments::Comments::add_leading(
+                                            &comments,
+                                            comment_byte_pos,
+                                            swc_common::comments::Comment {
+                                                span: swc_common::DUMMY_SP,
+                                                kind: swc_common::comments::CommentKind::Block,
+                                                text: swc_atoms::Atom::from(member.comment.clone()),
+                                            },
+                                        );
+                                        swc_common::Spanned::span(&comment_byte_pos)
+                                    },
                                     readonly: true,
                                     key: Box::new(swc_ecma_ast::Expr::Ident(swc_ecma_ast::Ident {
                                         span: swc_common::Span::default(),
-                                        sym: string_cache::Atom::from("id"),
+                                        sym: string_cache::Atom::from(member.name.clone()),
                                         optional: false,
                                     })),
                                     computed: false,
@@ -192,34 +206,8 @@ fn tree_to_code() {
                                     })),
                                     type_params: None,
                                 },
-                            ),
-                            swc_ecma_ast::TsTypeElement::TsPropertySignature(
-                                swc_ecma_ast::TsPropertySignature {
-                                    span: swc_common::Spanned::span(&account_name_comment_byte_pos),
-                                    readonly: true,
-                                    key: Box::new(swc_ecma_ast::Expr::Ident(swc_ecma_ast::Ident {
-                                        span: swc_common::Span::default(),
-                                        sym: string_cache::Atom::from("name"),
-                                        optional: false,
-                                    })),
-                                    computed: false,
-                                    optional: false,
-                                    init: None,
-                                    params: vec![],
-                                    type_ann: Some(Box::new(swc_ecma_ast::TsTypeAnn {
-                                        span: swc_common::Span::default(),
-                                        type_ann: Box::new(swc_ecma_ast::TsType::TsKeywordType(
-                                            swc_ecma_ast::TsKeywordType {
-                                                span: swc_common::Span::default(),
-                                                kind:
-                                                    swc_ecma_ast::TsKeywordTypeKind::TsStringKeyword,
-                                            },
-                                        )),
-                                    })),
-                                    type_params: None,
-                                },
-                            ),
-                        ],
+                            )
+                        }).collect()
                     })),
                     type_params: None,
                 })),
@@ -240,7 +228,5 @@ fn tree_to_code() {
 
     swc_ecma_codegen::Node::emit_with(&module, &mut emitter).expect("コードの生成が失敗した");
 
-    let code = String::from_utf8(buf).expect("UTF8として解釈できないコードを生成した");
-
-    println!("{}", code);
+    String::from_utf8(buf).expect("UTF8として解釈できないコードを生成した")
 }
